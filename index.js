@@ -1,10 +1,15 @@
 const path = require('path');
+const fs = require('fs');
 const child_process = require('child_process');
 
 module.exports = (opts = {}) => {
 	let input;
 	let proc;
+	let bin, dest;
 
+	if (typeof opts.bin !== "string" && opts.bin) {
+		throw new Error(`option 'bin' in rollup-plugin-run must be 'string', not '${typeof opts.bin}'`)
+	} else bin = opts.bin;
 	const args = opts.args || [];
 	const forkOptions = opts.options || opts;
 	delete forkOptions.args;
@@ -23,7 +28,7 @@ module.exports = (opts = {}) => {
 				inputs = Object.values(inputs);
 			}
 
-			if (inputs.length > 1) {
+			if (inputs.length > 1 && !bin) {
 				throw new Error(`rollup-plugin-run only works with a single entry point`);
 			}
 
@@ -37,9 +42,8 @@ module.exports = (opts = {}) => {
 
 			const dir = outputOptions.dir || path.dirname(outputOptions.file);
 
-			let dest;
-
-			for (const fileName in bundle) {
+			if (bin) dest = bin;
+			else for (const fileName in bundle) {
 				const chunk = bundle[fileName];
 
 				if (!('isEntry' in chunk)) {
